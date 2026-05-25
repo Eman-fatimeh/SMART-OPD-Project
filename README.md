@@ -194,7 +194,7 @@ Then deploy static files.
 
 ## 👨‍💻 Author
 
-Eman Fatima
+Eman Fatima,
 Zainab Rafaqat
 **CareFlow OPD — Smart Hospital Queue Management System**
 
