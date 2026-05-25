@@ -48,6 +48,7 @@ CareFlow-OPD/
 ├── backend/
 │   ├── main.py
 │   ├── patients.db
+|   |__test_main.py
 │   ├── models (SQLAlchemy tables)
 │
 ├── frontend/
@@ -56,9 +57,10 @@ CareFlow-OPD/
 │   ├── login.html
 │   ├── doctor.html
 │   ├── receptionist.html
-│   ├── assets/
+│   
 │
 └── README.md
+|___AI_prompts.md
 ```
 
 ---
