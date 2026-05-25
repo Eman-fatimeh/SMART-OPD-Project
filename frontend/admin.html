@@ -1,0 +1,648 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>CareFlow Admin Dashboard</title>
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+
+:root{
+  --blue:#1a56db;
+  --blue-dark:#1746ad;
+  --bg:#f4f8ff;
+  --white:#ffffff;
+  --text:#0f172a;
+  --muted:#64748b;
+  --border:#e2e8f0;
+  --green:#0e9f6e;
+  --orange:#f59e0b;
+}
+
+*{
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'DM Sans',sans-serif;
+}
+
+body{
+  background:var(--bg);
+  display:flex;
+  min-height:100vh;
+}
+
+/* SIDEBAR */
+.sidebar{
+  width:230px;
+  background:white;
+  border-right:1px solid var(--border);
+  padding:24px 18px;
+}
+
+.logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  margin-bottom:40px;
+}
+
+.logo-icon{
+  width:40px;
+  height:40px;
+  border-radius:10px;
+  background:var(--blue);
+  color:white;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:24px;
+  font-weight:700;
+}
+
+.logo span{
+  font-size:24px;
+  font-family:'DM Serif Display';
+}
+
+.sidebar nav{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.sidebar nav a{
+  text-decoration:none;
+  color:var(--text);
+  padding:12px 14px;
+  border-radius:10px;
+  font-weight:600;
+  transition:.2s;
+}
+
+.sidebar nav a:hover,
+.sidebar nav a.active{
+  background:var(--blue);
+  color:white;
+}
+
+/* MAIN */
+.main-wrapper{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+}
+
+/* HEADER */
+.header{
+  height:70px;
+  background:white;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 25px;
+}
+
+.header-title{
+  font-size:22px;
+  font-weight:800;
+}
+
+.logout-btn{
+  background:var(--blue);
+  color:white;
+  border:none;
+  padding:10px 18px;
+  border-radius:8px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.logout-btn:hover{
+  background:var(--blue-dark);
+}
+
+/* CONTENT */
+.content{
+  padding:25px;
+}
+
+/* WELCOME */
+.welcome-banner{
+  background:linear-gradient(135deg,#1a56db,#3b82f6);
+  color:white;
+  border-radius:18px;
+  padding:25px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:25px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.08);
+}
+
+.welcome-banner h2{
+  font-size:28px;
+  margin-bottom:6px;
+}
+
+#liveTime{
+  font-size:18px;
+  font-weight:700;
+}
+
+/* CARDS */
+.cards{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:20px;
+  margin-bottom:30px;
+}
+
+.card{
+  background:white;
+  border-radius:18px;
+  padding:24px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.06);
+}
+
+.card h3{
+  color:var(--muted);
+  margin-bottom:10px;
+  font-size:15px;
+}
+
+.card .count{
+  font-size:34px;
+  font-weight:800;
+  color:var(--blue);
+}
+
+/* QUICK ACTIONS */
+.quick-actions{
+  display:flex;
+  gap:15px;
+  margin-bottom:30px;
+  flex-wrap:wrap;
+}
+
+.quick-actions button{
+  background:var(--blue);
+  color:white;
+  border:none;
+  padding:12px 18px;
+  border-radius:10px;
+  cursor:pointer;
+  font-weight:600;
+}
+
+.quick-actions button:hover{
+  background:var(--blue-dark);
+}
+
+/* TABLE SECTION */
+.grid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:25px;
+}
+
+.panel{
+  background:white;
+  border-radius:18px;
+  padding:20px;
+  box-shadow:0 10px 30px rgba(0,0,0,0.06);
+}
+
+.panel h3{
+  margin-bottom:18px;
+}
+
+/* TABLE */
+table{
+  width:100%;
+  border-collapse:collapse;
+}
+
+th,td{
+  padding:12px;
+  border-bottom:1px solid var(--border);
+  text-align:left;
+  font-size:14px;
+}
+
+th{
+  background:#f8fafc;
+}
+
+.status{
+  padding:6px 10px;
+  border-radius:20px;
+  font-size:12px;
+  font-weight:700;
+  color:white;
+}
+
+.waiting{
+  background:var(--orange);
+}
+
+.available{
+  background:var(--green);
+}
+
+/* RESPONSIVE */
+@media(max-width:1000px){
+
+  .grid{
+    grid-template-columns:1fr;
+  }
+
+  .sidebar{
+    display:none;
+  }
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+
+  <div class="logo">
+    <div class="logo-icon">+</div>
+    <span>Care<span style="color:#1a56db;">Flow</span></span>
+  </div>
+
+  <nav>
+    <a href="#" class="active">Dashboard</a>
+    <a href="manage_doctor.html">Manage Doctors</a>
+    <a href="manage_patients.html">Manage Patients</a>
+    <a href="live_queue.html">Queue</a>
+  </nav>
+
+</div>
+
+<!-- MAIN -->
+<div class="main-wrapper">
+
+  <!-- HEADER -->
+  <header class="header">
+
+    <div class="header-title">
+      Admin Dashboard
+    </div>
+
+    <button class="logout-btn" onclick="logout()">
+      Logout
+    </button>
+
+  </header>
+
+  <!-- CONTENT -->
+  <div class="content">
+
+    <!-- WELCOME -->
+    <div class="welcome-banner">
+
+      <div>
+        <h2>Welcome Back, Admin 👋</h2>
+        <p>CareFlow Hospital Management System</p>
+      </div>
+
+      <div id="liveTime"></div>
+
+    </div>
+
+    <!-- CARDS -->
+    <div class="cards">
+
+      <div class="card">
+        <h3>Total Patients</h3>
+        <div class="count" id="totalPatients">0</div>
+      </div>
+     
+      <div class="card">
+        <h3>Total Doctors</h3>
+        <div class="count" id="totalDoctors">0</div>
+      </div>
+
+     <div class="card">
+  <h3>Doctors Available</h3>
+  <div class="count" id="availableDoctors">0</div>
+</div>
+      <div class="card">
+        <h3>Waiting Queue</h3>
+        <div class="count" id="activeQueue">0</div>
+      </div>
+
+    </div>
+
+    <!-- QUICK ACTIONS -->
+    <div class="quick-actions">
+
+      <button onclick="window.location.href='register.html'">
+        + Register Patient
+      </button>
+
+      <button onclick="window.location.href='manage_doctor.html'">
+        + Add Doctor
+      </button>
+
+      <button onclick="window.location.href='token.html'">
+        + Generate Token
+      </button>
+
+    </div>
+
+    <!-- TABLES -->
+    <div class="grid">
+
+      <!-- RECENT PATIENTS -->
+      <div class="panel">
+
+        <h3>Recent Patients</h3>
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Department</th>
+            </tr>
+          </thead>
+
+          <tbody id="patientsTable"></tbody>
+
+        </table>
+
+      </div>
+
+      <!-- TOKEN QUEUE -->
+      <div class="panel">
+
+        <h3>Live Queue</h3>
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>Token</th>
+              <th>Patient</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+
+          <tbody id="queueTable"></tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+
+/* =========================
+   LIVE CLOCK
+========================= */
+
+function updateTime(){
+
+  document.getElementById("liveTime").textContent =
+    new Date().toLocaleString();
+}
+
+setInterval(updateTime, 1000);
+
+updateTime();
+
+
+/* =========================
+   LOGOUT
+========================= */
+
+function logout(){
+
+  localStorage.clear();
+
+  window.location.href = "login.html";
+}
+
+
+/* =========================
+   STORAGE HELPERS
+========================= */
+
+function getQueueData(){
+
+  return JSON.parse(
+    localStorage.getItem("queueData")
+  ) || [];
+}
+
+
+function getCurrentIndex(){
+
+  const val = parseInt(
+    localStorage.getItem("currentQueueIndex")
+  );
+
+  return isNaN(val) ? -1 : val;
+}
+
+
+/* =========================
+   LOAD DASHBOARD
+========================= */
+
+async function loadDashboard(){
+
+  try{
+
+    const queueData =
+      getQueueData();
+
+    const currentIndex =
+      getCurrentIndex();
+
+
+    /* ======================
+       FETCH DOCTORS
+    ====================== */
+
+    const response =
+      await fetch(
+        "http://127.0.0.1:8000/doctors"
+      );
+
+    const doctors =
+      await response.json();
+
+
+    /* ======================
+       PATIENT STATS
+    ====================== */
+
+    const totalPatients =
+      queueData.length;
+
+    const waiting =
+      queueData.filter(
+        (_, i) => i > currentIndex
+      ).length;
+
+    document.getElementById(
+      "totalPatients"
+    ).textContent = totalPatients;
+
+    document.getElementById(
+      "activeQueue"
+    ).textContent = waiting;
+
+
+    /* ======================
+       DOCTOR STATS
+    ====================== */
+
+    document.getElementById(
+      "totalDoctors"
+    ).textContent = doctors.length;
+
+    const availableDoctors =
+      doctors.filter(
+        d => d.status === "Available"
+      ).length;
+
+    document.getElementById(
+      "availableDoctors"
+    ).textContent =
+      availableDoctors;
+
+
+    /* ======================
+       RECENT PATIENTS
+    ====================== */
+
+    document.getElementById(
+      "patientsTable"
+    ).innerHTML =
+
+      queueData.length
+
+      ? queueData
+          .slice(-5)
+          .reverse()
+          .map((p, i) => `
+
+            <tr>
+              <td>${i + 1}</td>
+              <td>${p.name}</td>
+              <td>${p.dept}</td>
+            </tr>
+
+          `).join("")
+
+      : `
+
+          <tr>
+            <td colspan="3">
+              No patients
+            </td>
+          </tr>
+
+        `;
+
+
+    /* ======================
+       LIVE QUEUE
+    ====================== */
+
+    document.getElementById(
+      "queueTable"
+    ).innerHTML =
+
+      queueData.length
+
+      ? queueData
+          .slice(0, 5)
+          .map((t, index) => {
+
+            let status = "Waiting";
+            let statusClass = "waiting";
+
+            if(index === currentIndex){
+
+              status = "In Consult";
+              statusClass = "available";
+            }
+
+            else if(index < currentIndex){
+
+              status = "Completed";
+              statusClass = "available";
+            }
+
+            return `
+
+              <tr>
+
+                <td>${t.token}</td>
+
+                <td>${t.name}</td>
+
+                <td>
+                  <span class="status ${statusClass}">
+                    ${status}
+                  </span>
+                </td>
+
+              </tr>
+
+            `;
+          }).join("")
+
+      : `
+
+          <tr>
+            <td colspan="3">
+              No queue
+            </td>
+          </tr>
+
+        `;
+
+  }
+
+  catch(error){
+
+    console.log(
+      "Dashboard Error:",
+      error
+    );
+  }
+}
+
+
+/* =========================
+   INITIAL LOAD
+========================= */
+
+loadDashboard();
+
+setInterval(loadDashboard, 2000);
+
+</script>
+
+</body>
+</html>

@@ -737,250 +737,291 @@
         </div>
       </div>
 
-      <!-- RIGHT: Live Queue Table -->
-      <div class="card" style="animation-delay:0.25s;">
-        <div class="card-header">
-          <div>
-            <h2>Live Queue</h2>
-            <p>All active tokens for today</p>
-          </div>
-          <span style="font-size:11px; background:var(--green-light); color:var(--green); padding:3px 10px; border-radius:20px; font-weight:600;">● Live</span>
-        </div>
+<script>
 
-        <div class="queue-filters">
-          <button class="filter-btn active" onclick="filterQueue(this,'all')">All</button>
-          <button class="filter-btn" onclick="filterQueue(this,'cardiology')">Cardiology</button>
-          <button class="filter-btn" onclick="filterQueue(this,'general')">General OPD</button>
-          <button class="filter-btn" onclick="filterQueue(this,'ortho')">Orthopedics</button>
-        </div>
+const API_URL = "http://127.0.0.1:8000";
 
-        <div id="queueTableWrap">
-          <table>
-            <thead>
-              <tr>
-                <th>Token</th>
-                <th>Patient</th>
-                <th>Department</th>
-                <th>Status</th>
-                <th>Action</th>
-              </tr>
-            </thead>
-            <tbody id="queueBody">
-              <tr>
-                <td><span class="token-badge">T01</span></td>
-                <td>Ahmed Hassan</td>
-                <td><span class="dept-badge">Cardiology</span></td>
-                <td><span class="status-pill consulting">In Consult</span></td>
-                <td><button class="action-btn" style="color:var(--green);border-color:var(--green);">✓ Done</button></td>
-              </tr>
-              <tr>
-                <td><span class="token-badge waiting">T02</span></td>
-                <td>Sara Iqbal</td>
-                <td><span class="dept-badge green">General OPD</span></td>
-                <td><span class="status-pill waiting">Waiting</span></td>
-                <td><button class="action-btn" onclick="removeFromQueue(this)">Remove</button></td>
-              </tr>
-              <tr>
-                <td><span class="token-badge waiting">T03</span></td>
-                <td>Bilal Raza</td>
-                <td><span class="dept-badge amber">Orthopedics</span></td>
-                <td><span class="status-pill waiting">Waiting</span></td>
-                <td><button class="action-btn" onclick="removeFromQueue(this)">Remove</button></td>
-              </tr>
-              <tr>
-                <td><span class="token-badge done">T04</span></td>
-                <td>Fatima Khan</td>
-                <td><span class="dept-badge">Gynecology</span></td>
-                <td><span class="status-pill done">Completed</span></td>
-                <td>—</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+// =========================
+// STATE
+// =========================
+let selectedPatientData = null;
+let tokenGenerated = false;
+let allPatients = [];
 
-        <div class="table-footer">
-          <span>Showing <strong>4</strong> tokens · <strong>1</strong> in consult · <strong>2</strong> waiting</span>
-          <button class="refresh-btn" onclick="refreshQueue()">
-            <svg width="12" height="12" fill="none" viewBox="0 0 24 24"><polyline points="23,4 23,11 16,11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-            Refresh
-          </button>
+// =========================
+// DATE
+// =========================
+const now = new Date();
+
+document.getElementById("currentDate").textContent =
+  now.toLocaleDateString("en-US", {
+    weekday: "short",
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+
+// =========================
+// LOAD PATIENTS FROM BACKEND
+// =========================
+async function loadPatients() {
+
+  try {
+    const res = await fetch(`${API_URL}/patients`);
+    const data = await res.json();
+
+    allPatients = data.map(p => {
+
+      const first = p.firstName || "";
+      const last = p.lastName || "";
+
+      const name = `${first} ${last}`.trim();
+
+      return {
+        id: p.id,
+        name: name,
+        firstName: first,
+        lastName: last,
+        age: p.age,
+        gender: p.gender,
+        dept: p.department,
+        initials: ((first[0] || "") + (last[0] || "")).toUpperCase()
+      };
+    });
+
+    renderResults(allPatients);
+
+  } catch (err) {
+    console.error("Error loading patients:", err);
+  }
+}
+
+// =========================
+// SEARCH
+// =========================
+function searchPatients(query) {
+
+  if (!query.trim()) {
+    renderResults(allPatients);
+    return;
+  }
+
+  const q = query.toLowerCase();
+
+  const filtered = allPatients.filter(p =>
+    p.name.toLowerCase().includes(q) ||
+    p.id.toLowerCase().includes(q) ||
+    p.dept.toLowerCase().includes(q)
+  );
+
+  renderResults(filtered);
+}
+
+// =========================
+// RENDER PATIENTS
+// =========================
+function renderResults(patients) {
+
+  const results = document.getElementById("patientResults");
+
+  if (!patients.length) {
+    results.innerHTML = `
+      <div class="empty-state">
+        <div>🔍</div>
+        No patients found
+      </div>
+    `;
+    return;
+  }
+
+  results.innerHTML = patients.map(p => `
+    <div class="patient-result-item"
+         onclick="selectPatient('${p.id}')">
+
+      <div class="pat-avatar">${p.initials}</div>
+
+      <div class="pat-info">
+        <div class="pat-name">${p.name}</div>
+        <div class="pat-meta">
+          ${p.age} yrs · ${p.gender} · ${p.dept}
         </div>
       </div>
+
+      <span class="pat-id">${p.id}</span>
 
     </div>
-  </div>
-</div>
+  `).join("");
+}
 
-<script>
-  // Date
-  const now = new Date();
-  document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
+// =========================
+// SELECT PATIENT
+// =========================
+function selectPatient(id) {
 
-  // State
-  let selectedPatientData = null;
-  let tokenGenerated = false;
-  let nextToken = 13;
+  const patient = allPatients.find(p => p.id === id);
+  if (!patient) return;
 
-  const allPatients = [
-    { id:'P-1024', name:'Ahmed Hassan',  initials:'AH', age:42, gender:'Male',   dept:'Cardiology',  color:'',       hasToken: false },
-    { id:'P-1023', name:'Sara Iqbal',    initials:'SI', age:29, gender:'Female', dept:'General OPD', color:'green',  hasToken: false },
-    { id:'P-1022', name:'Bilal Raza',    initials:'BR', age:55, gender:'Male',   dept:'Orthopedics', color:'amber',  hasToken: false },
-    { id:'P-1021', name:'Fatima Khan',   initials:'FK', age:33, gender:'Female', dept:'Gynecology',  color:'purple', hasToken: true  },
-  ];
+  selectedPatientData = patient;
 
-  // Search
-  function searchPatients(query) {
-    const results = document.getElementById('patientResults');
-    if (!query.trim()) {
-      renderResults(allPatients);
-      return;
-    }
-    const q = query.toLowerCase();
-    const filtered = allPatients.filter(p =>
-      p.name.toLowerCase().includes(q) || p.id.toLowerCase().includes(q)
+  document.getElementById("spAvatar").textContent = patient.initials;
+  document.getElementById("spName").textContent = patient.name;
+  document.getElementById("spSub").textContent = `${patient.id} · ${patient.dept}`;
+  document.getElementById("spAge").textContent = `${patient.age} yrs`;
+  document.getElementById("spGender").textContent = patient.gender;
+  document.getElementById("spDept").textContent = patient.dept;
+
+  document.getElementById("selectedPatient").classList.add("show");
+
+  document.getElementById("generateBtn").disabled = false;
+  document.getElementById("printBtn").disabled = true;
+
+  document.getElementById("tokenDisplay").style.display = "none";
+}
+
+// =========================
+// GENERATE TOKEN (BACKEND)
+// =========================
+async function generateToken() {
+
+  if (!selectedPatientData) return;
+
+  try {
+
+    const res = await fetch(
+      `${API_URL}/generate-token/${selectedPatientData.id}`,
+      { method: "POST" }
     );
-    renderResults(filtered);
-  }
 
-  function renderResults(patients) {
-    const results = document.getElementById('patientResults');
-    if (patients.length === 0) {
-      results.innerHTML = '<div class="empty-state"><div>🔍</div>No patients found. Please register the patient first.</div>';
+    const data = await res.json();
+
+    if (!data.success) {
+      alert("Failed to generate token");
       return;
     }
-    results.innerHTML = patients.map(p => `
-      <div class="patient-result-item ${selectedPatientData?.id === p.id ? 'selected' : ''}"
-           onclick="${p.hasToken ? '' : `selectPatient('${p.id}','${p.name}',${p.age},'${p.gender}','${p.dept}')`}"
-           style="${p.hasToken ? 'cursor:default;opacity:0.7;' : ''}">
-        <div class="pat-avatar ${p.color}" style="${p.color === 'purple' ? 'background:#8b5cf6;' : ''}">${p.initials}</div>
-        <div class="pat-info">
-          <div class="pat-name">${p.name}</div>
-          <div class="pat-meta">${p.age} yrs · ${p.gender} · ${p.dept}</div>
-        </div>
-        ${p.hasToken
-          ? '<span class="already-badge">Token Issued</span>'
-          : `<span class="pat-id">${p.id}</span>`}
-      </div>
-    `).join('');
-  }
 
-  function selectPatient(id, name, age, gender, dept) {
-    selectedPatientData = { id, name, age, gender, dept };
-    tokenGenerated = false;
+    const token = data.token;
 
-    // Show selected panel
-    const initials = name.split(' ').map(n => n[0]).join('');
-    document.getElementById('spAvatar').textContent = initials;
-    document.getElementById('spName').textContent   = name;
-    document.getElementById('spSub').textContent    = `${id} · ${dept}`;
-    document.getElementById('spAge').textContent    = `${age} yrs`;
-    document.getElementById('spGender').textContent = gender;
-    document.getElementById('spDept').textContent   = dept;
-    document.getElementById('selectedPatient').classList.add('show');
+    document.getElementById("tokenNum").textContent = token;
+    document.getElementById("tokenFull").textContent = token;
+    document.getElementById("tokenPatient").textContent = selectedPatientData.name;
+    document.getElementById("tokenDept").textContent = selectedPatientData.dept;
 
-    // Hide token display
-    document.getElementById('tokenDisplay').classList.remove('show');
-    document.getElementById('tokenDisplay').style.display = 'none';
+    document.getElementById("tokenPos").textContent = "Added to queue";
+    document.getElementById("waitBadge").textContent = "⏱ Updated by server";
 
-    // Enable button
-    document.getElementById('generateBtn').disabled = false;
-    document.getElementById('printBtn').disabled    = true;
+    document.getElementById("tokenDisplay").style.display = "block";
 
-    // Highlight selected in list
-    document.querySelectorAll('.patient-result-item').forEach(el => el.classList.remove('selected'));
-    event.currentTarget.classList.add('selected');
-  }
+    document.getElementById("generateBtn").disabled = true;
+    document.getElementById("printBtn").disabled = false;
 
-  function clearPatient() {
-    selectedPatientData = null;
-    tokenGenerated      = false;
-    document.getElementById('selectedPatient').classList.remove('show');
-    document.getElementById('tokenDisplay').style.display = 'none';
-    document.getElementById('tokenDisplay').classList.remove('show');
-    document.getElementById('generateBtn').disabled = true;
-    document.getElementById('printBtn').disabled    = true;
-    document.querySelectorAll('.patient-result-item').forEach(el => el.classList.remove('selected'));
-  }
-
-  function generateToken() {
-    if (!selectedPatientData || tokenGenerated) return;
     tokenGenerated = true;
 
-    const tokenNum  = String(nextToken).padStart(3, '0');
-    const tokenFull = 'T-' + tokenNum;
-    const waitMins  = (nextToken - 12) * 5;
-    const position  = nextToken - 12;
+    // refresh queue view (if you have it)
+    loadTokens();
 
-    document.getElementById('tokenNum').textContent     = tokenNum;
-    document.getElementById('tokenFull').textContent    = tokenFull;
-    document.getElementById('tokenPatient').textContent = selectedPatientData.name.split(' ')[0] + ' ' + selectedPatientData.name.split(' ')[1][0] + '.';
-    document.getElementById('tokenDept').textContent    = selectedPatientData.dept;
-    document.getElementById('tokenPos').textContent     = '#' + position + ' in line';
-    document.getElementById('waitBadge').textContent    = '⏱ Est. wait: ~' + waitMins + ' mins';
-
-    // Show token
-    const td = document.getElementById('tokenDisplay');
-    td.style.display = 'block';
-    td.classList.add('show');
-
-    // Update stats
-    document.getElementById('totalTokens').textContent  = nextToken;
-    document.getElementById('nextTokenStat').textContent = 'T-' + String(nextToken + 1).padStart(3, '0');
-    document.getElementById('queueCount').textContent   = nextToken;
-
-    // Enable print, disable generate
-    document.getElementById('printBtn').disabled    = false;
-    document.getElementById('generateBtn').disabled = true;
-    document.getElementById('generateBtn').textContent = '✓ Token Generated';
-
-    // Add to queue table
-    addToQueueTable(tokenFull, selectedPatientData.name, selectedPatientData.dept);
-
-    nextToken++;
+  } catch (err) {
+    console.error("Token error:", err);
   }
+}
 
-  function addToQueueTable(token, name, dept) {
-    const body = document.getElementById('queueBody');
-    const deptClass = dept === 'General OPD' ? 'green' : dept === 'Orthopedics' ? 'amber' : '';
-    const row = document.createElement('tr');
-    row.style.animation = 'fadeUp 0.3s ease';
-    row.innerHTML = `
-      <td><span class="token-badge waiting">${token}</span></td>
-      <td>${name}</td>
-      <td><span class="dept-badge ${deptClass}">${dept}</span></td>
-      <td><span class="status-pill waiting">Waiting</span></td>
-      <td><button class="action-btn" onclick="removeFromQueue(this)">Remove</button></td>
+// =========================
+// LOAD TOKENS (QUEUE)
+// =========================
+async function loadTokens() {
+
+  try {
+
+    const res = await fetch(`${API_URL}/tokens`);
+    const tokens = await res.json();
+
+    renderQueue(tokens);
+
+    updateStats(tokens);
+
+  } catch (err) {
+    console.error("Queue load error:", err);
+  }
+}
+
+// =========================
+// RENDER QUEUE
+// =========================
+function renderQueue(tokens) {
+
+  const body = document.getElementById("queueBody");
+
+  if (!tokens.length) {
+    body.innerHTML = `
+      <tr>
+        <td colspan="4">No active queue</td>
+      </tr>
     `;
-    body.appendChild(row);
+    return;
   }
 
-  function removeFromQueue(btn) {
-    if (confirm('Remove this patient from the queue?')) {
-      btn.closest('tr').style.opacity = '0';
-      btn.closest('tr').style.transition = 'opacity 0.3s';
-      setTimeout(() => btn.closest('tr').remove(), 300);
-    }
-  }
+  body.innerHTML = tokens.map(t => `
+    <tr>
 
-  function filterQueue(btn, dept) {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    // In real system, this would filter by dept from DB
-  }
+      <td>
+        <span class="token-badge">${t.token}</span>
+      </td>
 
-  function printToken() {
-    window.print();
-  }
+      <td>${t.patient}</td>
 
-  function refreshQueue() {
-    const btn = document.querySelector('.refresh-btn svg');
-    btn.style.animation = 'spin 0.5s linear';
-    setTimeout(() => btn.style.animation = '', 500);
-  }
+      <td>${t.department}</td>
 
-  // Initial render
-  renderResults(allPatients);
+      <td>
+        <span class="status-pill">${t.status}</span>
+      </td>
+
+    </tr>
+  `).join("");
+}
+
+// =========================
+// UPDATE STATS
+// =========================
+function updateStats(tokens = []) {
+
+  document.getElementById("totalTokens").textContent = tokens.length;
+
+  document.getElementById("queueCount").textContent = tokens.length;
+
+  document.getElementById("nextTokenStat").textContent =
+    `T-${String(tokens.length + 1).padStart(3, "0")}`;
+}
+
+// =========================
+// CLEAR PATIENT
+// =========================
+function clearPatient() {
+
+  selectedPatientData = null;
+
+  document.getElementById("selectedPatient").classList.remove("show");
+
+  document.getElementById("generateBtn").disabled = true;
+  document.getElementById("printBtn").disabled = true;
+
+  document.getElementById("tokenDisplay").style.display = "none";
+}
+
+// =========================
+// PRINT
+// =========================
+function printToken() {
+  if (!tokenGenerated) return;
+  window.print();
+}
+
+// =========================
+// INIT
+// =========================
+document.addEventListener("DOMContentLoaded", () => {
+  loadPatients();
+  loadTokens();
+});
+
 </script>
-
 </body>
 </html>

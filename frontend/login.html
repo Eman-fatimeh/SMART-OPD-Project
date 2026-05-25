@@ -612,14 +612,22 @@
 </div>
 
 <script>
-  // Role selection
+  // =========================
+  // ROLE SELECTION
+  // =========================
   function selectRole(btn) {
-    document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.role-btn')
+      .forEach(b => b.classList.remove('active'));
+
     btn.classList.add('active');
-    document.getElementById('roleInput').value = btn.getAttribute('data-role');
+
+    document.getElementById('roleInput')
+      .value = btn.getAttribute('data-role');
   }
 
-  // Password toggle
+  // =========================
+  // PASSWORD TOGGLE
+  // =========================
   function togglePassword() {
     const input = document.getElementById('password');
     const icon  = document.getElementById('eyeIcon');
@@ -627,49 +635,51 @@
     if (input.type === 'password') {
       input.type = 'text';
       icon.innerHTML = `
-        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94
-        M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19
-        M1 1l22 22"
-        stroke="#94a3b8"
-        stroke-width="2"
-        stroke-linecap="round"/>
+        <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19M1 1l22 22"
+        stroke="#94a3b8" stroke-width="2" stroke-linecap="round"/>
       `;
     } else {
       input.type = 'password';
       icon.innerHTML = `
         <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"
-        stroke="#94a3b8"
-        stroke-width="2"/>
+        stroke="#94a3b8" stroke-width="2"/>
         <circle cx="12" cy="12" r="3"
-        stroke="#94a3b8"
-        stroke-width="2"/>
+        stroke="#94a3b8" stroke-width="2"/>
       `;
     }
   }
 
-  // FastAPI Login
-  document.getElementById('loginForm').addEventListener('submit', async function(e) {
+  // =========================
+  // LOGIN FORM
+  // =========================
+  document.getElementById('loginForm')
+    .addEventListener('submit', async function(e) {
+
     e.preventDefault();
 
     const username = document.getElementById('username').value.trim();
     const password = document.getElementById('password').value.trim();
-    const role = document.getElementById('roleInput').value;
+    const role     = document.getElementById('roleInput').value;
 
-    const errorMsg = document.getElementById('errorMsg');
+    const errorMsg  = document.getElementById('errorMsg');
     const errorText = document.getElementById('errorText');
 
+    errorMsg.classList.remove('show');
+
     // Validation
-    if (!username || !password) {
+    if (!username || !password || !role) {
       errorMsg.classList.add('show');
-      errorText.textContent = 'Please fill in all fields before logging in.';
+      errorText.textContent = 'Please fill in all fields.';
       return;
     }
 
-    // Loading state
-    const btn = document.getElementById('loginBtn');
+    // =========================
+    // LOADING STATE
+    // =========================
+    const btn     = document.getElementById('loginBtn');
     const spinner = document.getElementById('spinner');
-    const arrow = document.getElementById('btnArrow');
-    const text = document.getElementById('btnText');
+    const arrow   = document.getElementById('btnArrow');
+    const text    = document.getElementById('btnText');
 
     btn.disabled = true;
     spinner.style.display = 'block';
@@ -677,6 +687,7 @@
     text.textContent = 'Logging in...';
 
     try {
+
       const response = await fetch('http://127.0.0.1:8000/login', {
         method: 'POST',
         headers: {
@@ -689,28 +700,59 @@
         })
       });
 
-      const data = await response.json();
-
-      if (response.ok) {
-        // Redirect after successful login
-        window.location.href = data.redirect;
-      } else {
-        errorMsg.classList.add('show');
-        errorText.textContent = data.detail || 'Invalid credentials.';
+      // SAFE JSON PARSE
+      let data = {};
+      try {
+        data = await response.json();
+      } catch (err) {
+        throw new Error("Invalid server response");
       }
 
-    } catch (error) {
-      errorMsg.classList.add('show');
-      errorText.textContent = 'Server connection failed.';
-    }
+      // CHECK RESPONSE STATUS
+      if (!response.ok) {
+        throw new Error(data.detail || 'Invalid credentials');
+      }
 
-    // Reset button
-    btn.disabled = false;
-    spinner.style.display = 'none';
-    arrow.style.display = 'block';
-    text.textContent = 'Login to System';
+      // =========================
+      // SUCCESS LOGIN
+      // =========================
+      const userData = {
+        username,
+        role,
+        token: data.token || null
+      };
+
+      localStorage.setItem("loggedInUser", JSON.stringify(userData));
+
+      if (role === "doctor") {
+        localStorage.setItem("doctorUser", JSON.stringify(userData));
+      }
+
+      if (role === "admin") {
+        localStorage.setItem("adminUser", JSON.stringify(userData));
+      }
+
+      if (role === "receptionist") {
+        localStorage.setItem("receptionistUser", JSON.stringify(userData));
+      }
+
+      // REDIRECT
+      window.location.href = data.redirect;
+
+    } catch (error) {
+
+      errorMsg.classList.add('show');
+      errorText.textContent = error.message || 'Server connection failed';
+
+    } finally {
+
+      // RESET BUTTON
+      btn.disabled = false;
+      spinner.style.display = 'none';
+      arrow.style.display = 'block';
+      text.textContent = 'Login to System';
+    }
   });
 </script>
-
 </body>
 </html>

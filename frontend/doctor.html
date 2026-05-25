@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Doctor Panel — CareFlow</title>
+
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+body {
+  font-family: DM Sans;
+  background: #f8faff;
+  margin: 0;
+}
+
+header {
+  background: white;
+  padding: 16px 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.container {
+  padding: 30px;
+}
+
+.card {
+  background: white;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.06);
+}
+
+.queue-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border: 1px solid #eee;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+.token {
+  background: #1a56db;
+  color: white;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+}
+
+.meta {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.status {
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 12px;
+}
+
+.waiting { background: #eee; }
+.active { background: #e8f0fd; }
+.done { background: #d1fae5; }
+
+button {
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.call { background: #1a56db; color: white; }
+.doneBtn { background: #0e9f6e; color: white; }
+</style>
+</head>
+
+<body>
+
+<header>
+  <div><b>CareFlow Doctor Panel</b></div>
+
+  <div>
+    <div id="docName">Doctor</div>
+    <small id="docDept"></small>
+  </div>
+
+  <button onclick="logout()">Logout</button>
+</header>
+
+<div class="container">
+  <h3>My Patients Queue</h3>
+  <div class="card" id="queue"></div>
+</div>
+
+<script>
+
+let doctor = null;
+let doctorDepartment = "";
+
+/* =========================
+   LOAD DOCTOR FROM LOGIN
+========================= */
+function loadDoctor() {
+
+  doctor = JSON.parse(localStorage.getItem("loggedInUser"));
+
+  if (!doctor || doctor.role !== "doctor") {
+    alert("Doctor not logged in");
+    window.location.href = "login.html";
+    return;
+  }
+
+  // MAP DOCTOR → DEPARTMENT
+  const doctorMap = {
+    "shanzaymalik": "Dermatology",
+    "alikhan": "ENT",
+    "faristaheer": "Cardiology",
+    "imranhameed": "ENT"
+  };
+
+  doctorDepartment = doctorMap[doctor.username] || "General";
+
+  document.getElementById("docName").innerText =
+    doctor.username;
+
+  document.getElementById("docDept").innerText =
+    doctorDepartment + " Specialist";
+
+  renderQueue();
+}
+
+/* =========================
+   LOCAL STORAGE HELPERS
+========================= */
+function getQueue() {
+  return JSON.parse(localStorage.getItem("queueData")) || [];
+}
+
+function saveQueue(data) {
+  localStorage.setItem("queueData", JSON.stringify(data));
+}
+
+/* =========================
+   FILTER BY DEPARTMENT
+========================= */
+function getMyPatients() {
+
+  const queue = getQueue();
+
+  return queue.filter(p =>
+    p.dept &&
+    p.dept.toLowerCase() === doctorDepartment.toLowerCase()
+  );
+}
+
+/* =========================
+   RENDER QUEUE (FIXED)
+========================= */
+function renderQueue() {
+
+  const patients = getMyPatients();
+
+  let html = "";
+
+  if (patients.length === 0) {
+    document.getElementById("queue").innerHTML =
+      "<p>No patients in your department</p>";
+    return;
+  }
+
+  patients.forEach(p => {
+
+    const status = p.status || "waiting";
+
+    html += `
+      <div class="queue-item">
+
+        <div class="token">${p.token || "-"}</div>
+
+        <div style="flex:1; margin-left:10px;">
+          <b>${p.name || "Unknown Patient"}</b>
+
+          <!-- REMOVED AGE / GENDER / CONTACT -->
+
+        </div>
+
+        <div class="status ${status}">
+          ${status === "active"
+            ? "In Consultation"
+            : status === "done"
+            ? "Completed"
+            : "Waiting"}
+        </div>
+
+        ${status === "waiting" ? `
+          <button class="call" onclick="callPatient('${p.token}')">
+            Call
+          </button>
+        ` : ""}
+
+        ${status === "active" ? `
+          <button class="doneBtn" onclick="donePatient('${p.token}')">
+            Done
+          </button>
+        ` : ""}
+
+      </div>
+    `;
+  });
+
+  document.getElementById("queue").innerHTML = html;
+}
+/* =========================
+   CALL PATIENT
+========================= */
+function callPatient(token) {
+
+  let queue = getQueue();
+
+  queue = queue.map(p => {
+
+    if (p.token === token) {
+      p.status = "active";
+    }
+
+    return p;
+  });
+
+  saveQueue(queue);
+  renderQueue();
+}
+
+/* =========================
+   MARK DONE
+========================= */
+function donePatient(token) {
+
+  let queue = getQueue();
+
+  queue = queue.map(p => {
+
+    if (p.token === token) {
+      p.status = "done";
+    }
+
+    return p;
+  });
+
+  saveQueue(queue);
+  renderQueue();
+}
+
+/* =========================
+   LOGOUT
+========================= */
+function logout() {
+  localStorage.clear();
+  window.location.href = "login.html";
+}
+
+/* =========================
+   INIT
+========================= */
+loadDoctor();
+setInterval(renderQueue, 2000);
+
+</script>
+
+</body>
+</html>

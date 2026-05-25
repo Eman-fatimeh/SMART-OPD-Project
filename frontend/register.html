@@ -1381,11 +1381,11 @@
 
 
   // =========================
-  // LOAD PATIENTS (FIXED)
+  // LOAD PATIENTS (API)
   // =========================
   async function loadPatients() {
     try {
-      const res = await fetch("http://127.0.0.1:8000/patients"); // ✅ FIXED HERE
+      const res = await fetch("http://127.0.0.1:8000/patients");
       const data = await res.json();
 
       const tbody = document.querySelector("tbody");
@@ -1395,9 +1395,9 @@
         const row = `
           <tr>
             <td>${p.id}</td>
-            <td>${p.data.firstName} ${p.data.lastName}</td>
-            <td>${p.data.age}</td>
-            <td>${p.data.department}</td>
+            <td>${p.firstName} ${p.lastName}</td>
+            <td>${p.age}</td>
+            <td>${p.department}</td>
             <td>Registered</td>
             <td>${p.time}</td>
           </tr>
@@ -1409,7 +1409,6 @@
       console.error("Failed to load patients:", err);
     }
   }
-
 
   document.addEventListener("DOMContentLoaded", loadPatients);
 
@@ -1494,7 +1493,7 @@
 
 
   // =========================
-  // SUBMIT FORM (FIXED)
+  // SUBMIT FORM (UPDATED FIX)
   // =========================
   async function submitForm() {
 
@@ -1544,7 +1543,23 @@
 
       if (data.success) {
 
-        // FIXED: backend returns patientId (not data.patient.id)
+        // =========================
+        // NEW FIX: SYNC WITH QUEUE PAGE
+        // =========================
+
+        let queueData = JSON.parse(localStorage.getItem("queueData")) || [];
+
+        const newPatient = {
+          token: data.patientId,   // SAME TOKEN
+          name: `${payload.firstName} ${payload.lastName}`,
+          dept: payload.department
+        };
+
+        queueData.push(newPatient);
+
+        localStorage.setItem("queueData", JSON.stringify(queueData));
+
+        // show ID
         document.getElementById('generatedId').textContent = data.patientId;
 
         document.getElementById('successModal').classList.add('show');

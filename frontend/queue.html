@@ -970,78 +970,491 @@
 </div>
 
 <script>
-  // Date
-  const now = new Date();
-  document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', { weekday:'short', year:'numeric', month:'short', day:'numeric' });
 
-  // Live clock for TV mode
+  // ==========================================
+  // API URL
+  // ==========================================
+  const API_URL = "http://127.0.0.1:8000";
+
+  // ==========================================
+  // DATE
+  // ==========================================
+  const now = new Date();
+
+  document.getElementById("currentDate").textContent =
+    now.toLocaleDateString("en-US", {
+      weekday: "short",
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    });
+
+  // ==========================================
+  // TV CLOCK
+  // ==========================================
   function updateClock() {
+
     const t = new Date();
-    document.getElementById('tvClock').textContent = t.toLocaleTimeString('en-US', { hour:'2-digit', minute:'2-digit' });
+
+    document.getElementById("tvClock").textContent =
+      t.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
   }
+
   updateClock();
+
   setInterval(updateClock, 1000);
 
-  // TV Mode
+  // ==========================================
+  // TV MODE
+  // ==========================================
   function openTV() {
-    document.getElementById('tvOverlay').classList.add('show');
+
+    document
+      .getElementById("tvOverlay")
+      .classList.add("show");
   }
 
   function closeTV() {
-    document.getElementById('tvOverlay').classList.remove('show');
+
+    document
+      .getElementById("tvOverlay")
+      .classList.remove("show");
   }
 
-  // Close TV mode with Escape
-  document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') closeTV();
+  document.addEventListener("keydown", (e) => {
+
+    if (e.key === "Escape") {
+
+      closeTV();
+    }
   });
 
-  // Dept filter
-  function filterDept(btn, dept) {
-    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    // In real system: fetch filtered rows from PHP
+  // ==========================================
+  // GLOBAL DATA
+  // ==========================================
+  let queueData = [];
+
+  let currentIndex =
+    parseInt(localStorage.getItem("currentQueueIndex")) || 0;
+
+  // ==========================================
+  // LOAD QUEUE FROM LOCAL STORAGE
+  // ==========================================
+  async function loadQueue() {
+
+    try {
+
+      queueData =
+        JSON.parse(localStorage.getItem("queueData")) || [];
+
+      // RESET INDEX IF OVERFLOW
+      if (currentIndex >= queueData.length) {
+
+        currentIndex =
+          queueData.length > 0
+            ? queueData.length - 1
+            : 0;
+
+        localStorage.setItem(
+          "currentQueueIndex",
+          currentIndex
+        );
+      }
+
+      renderQueue();
+
+    } catch (error) {
+
+      console.error(
+        "Queue load error:",
+        error
+      );
+    }
   }
 
-  // Call Next
-  let currentToken = 1;
-  const queue = [
-    { token:'T-002', num:'002', patient:'Sara Iqbal',   dept:'General OPD' },
-    { token:'T-003', num:'003', patient:'Bilal Raza',   dept:'Orthopedics' },
-    { token:'T-004', num:'004', patient:'Fatima Khan',  dept:'Gynecology' },
-    { token:'T-005', num:'005', patient:'Usman Sheikh', dept:'Cardiology' },
-  ];
+  // ==========================================
+  // RENDER QUEUE
+  // ==========================================
+  function renderQueue() {
 
-  function callNext() {
-    if (currentToken >= queue.length) return;
-    const next = queue[currentToken];
-    document.getElementById('currentTokenNum').textContent = next.num;
-    document.getElementById('currentTokenId').textContent  = next.token + ' · ' + next.dept;
-    document.getElementById('currentPatient').textContent  = next.patient;
-    document.getElementById('tvToken').textContent         = next.num;
-    document.getElementById('tvTokenId').textContent       = next.token;
-    document.getElementById('tvPatient').textContent       = next.patient;
+    const queueBody =
+      document.getElementById("queueBody");
 
-    // Update next display
-    if (currentToken + 1 < queue.length) {
-      const upcoming = queue[currentToken + 1];
-      document.getElementById('nextTokenDisplay').textContent = upcoming.token;
-      document.getElementById('nextPatientName').textContent  = upcoming.patient;
+    queueBody.innerHTML = "";
+
+    if (queueData.length === 0) {
+
+      queueBody.innerHTML = `
+        <tr>
+          <td colspan="6" style="text-align:center;padding:30px;">
+            No patients in queue
+          </td>
+        </tr>
+      `;
+
+      clearHero();
+
+      return;
     }
 
-    currentToken++;
+    queueData.forEach((patient, index) => {
+
+      let status = "Waiting";
+
+      let statusClass = "waiting";
+
+      let tokenClass = "";
+
+      if (index === currentIndex) {
+
+        status = "In Consult";
+
+        statusClass = "consulting";
+
+        tokenClass = "current";
+      }
+
+      if (index < currentIndex) {
+
+        status = "Completed";
+
+        statusClass = "done";
+
+        tokenClass = "done";
+      }
+
+      const waitTime =
+        index <= currentIndex
+          ? "—"
+          : `⏱ ~${(index - currentIndex) * 5} mins`;
+
+      queueBody.innerHTML += `
+
+        <tr class="${
+          index === currentIndex
+            ? "current-row"
+            : ""
+        }">
+
+          <td>
+            <span class="token-badge ${tokenClass}">
+              ${patient.token}
+            </span>
+          </td>
+
+          <td style="font-weight:600;">
+            ${patient.name}
+          </td>
+
+          <td>
+            <span class="dept-badge">
+              ${patient.dept}
+            </span>
+          </td>
+
+          <td style="font-size:12px;color:var(--text-muted);">
+            Dr. Assigned
+          </td>
+
+          <td>
+            <span class="status-pill ${statusClass}">
+              ${status}
+            </span>
+          </td>
+
+          <td>
+            <span class="wait-time">
+              ${waitTime}
+            </span>
+          </td>
+
+        </tr>
+
+      `;
+    });
+
+    updateHero();
+
+    updateTVMode();
+
+    updateStats();
   }
 
-  // Refresh
-  function refreshQueue() {
-    const icon = document.getElementById('refreshIcon');
-    icon.style.animation = 'spin 0.6s linear';
-    setTimeout(() => icon.style.animation = '', 600);
+  // ==========================================
+  // CLEAR HERO
+  // ==========================================
+  function clearHero() {
+
+    document.getElementById("currentTokenNum")
+      .textContent = "--";
+
+    document.getElementById("currentTokenId")
+      .textContent = "No Active Queue";
+
+    document.getElementById("currentPatient")
+      .textContent = "Waiting for patients";
+
+    document.getElementById("nextTokenDisplay")
+      .textContent = "--";
+
+    document.getElementById("nextPatientName")
+      .textContent = "No upcoming patients";
+
+    document.getElementById("tvToken")
+      .textContent = "--";
+
+    document.getElementById("tvTokenId")
+      .textContent = "--";
+
+    document.getElementById("tvPatient")
+      .textContent = "Waiting for patients";
+
+    document.querySelector(".tv-waiting")
+      .innerHTML = "";
   }
 
-  // Auto-refresh every 30s
-  setInterval(refreshQueue, 30000);
+  // ==========================================
+  // UPDATE HERO SECTION
+  // ==========================================
+  function updateHero() {
+
+    if (queueData.length === 0) return;
+
+    const current =
+      queueData[currentIndex];
+
+    document.getElementById("currentTokenNum")
+      .textContent = current.token;
+
+    document.getElementById("currentTokenId")
+      .textContent =
+      `${current.token} · ${current.dept}`;
+
+    document.getElementById("currentPatient")
+      .textContent = current.name;
+
+    // NEXT PATIENT
+    if (currentIndex + 1 < queueData.length) {
+
+      const next =
+        queueData[currentIndex + 1];
+
+      document.getElementById("nextTokenDisplay")
+        .textContent = next.token;
+
+      document.getElementById("nextPatientName")
+        .textContent = next.name;
+
+    } else {
+
+      document.getElementById("nextTokenDisplay")
+        .textContent = "DONE";
+
+      document.getElementById("nextPatientName")
+        .textContent = "No more patients";
+    }
+  }
+
+  // ==========================================
+  // UPDATE TV MODE
+  // ==========================================
+  function updateTVMode() {
+
+    if (queueData.length === 0) return;
+
+    const current =
+      queueData[currentIndex];
+
+    document.getElementById("tvToken")
+      .textContent = current.token;
+
+    document.getElementById("tvTokenId")
+      .textContent = current.token;
+
+    document.getElementById("tvPatient")
+      .textContent = current.name;
+
+    const waitingContainer =
+      document.querySelector(".tv-waiting");
+
+    waitingContainer.innerHTML = "";
+
+    queueData
+      .slice(currentIndex + 1)
+      .forEach((patient, i) => {
+
+        waitingContainer.innerHTML += `
+
+          <div class="tv-queue-item ${
+            i === 0 ? "next" : ""
+          }">
+
+            <div class="tv-q-token">
+              ${patient.token}
+            </div>
+
+            <div>
+
+              <div class="tv-q-name">
+                ${patient.name}
+              </div>
+
+              <div class="tv-q-dept">
+                ${patient.dept}
+              </div>
+
+            </div>
+
+            ${
+              i === 0
+                ? `
+                  <span class="tv-q-next-badge">
+                    Next
+                  </span>
+                `
+                : `
+                  <div class="tv-q-wait">
+                    ~${(i + 1) * 5} mins
+                  </div>
+                `
+            }
+
+          </div>
+
+        `;
+      });
+  }
+
+  // ==========================================
+  // UPDATE STATS
+  // ==========================================
+  function updateStats() {
+
+    const total =
+      queueData.length;
+
+    const waiting =
+      total - currentIndex - 1;
+
+    document.querySelectorAll(".stat-info p")[0]
+      .textContent = total;
+
+    document.getElementById("waitingCount")
+      .textContent =
+      waiting < 0 ? 0 : waiting;
+
+    document.getElementById("activeCount")
+      .textContent =
+      total > 0 ? 1 : 0;
+  }
+
+  // ==========================================
+  // CALL NEXT
+  // ==========================================
+  function callNext() {
+
+    if (currentIndex < queueData.length - 1) {
+
+      currentIndex++;
+
+      localStorage.setItem(
+        "currentQueueIndex",
+        currentIndex
+      );
+
+      renderQueue();
+
+    } else {
+
+      alert("No more patients in queue.");
+    }
+  }
+
+  // ==========================================
+  // FILTER BY DEPARTMENT
+  // ==========================================
+  function filterDept(btn, dept) {
+
+    document
+      .querySelectorAll(".filter-btn")
+      .forEach(b =>
+        b.classList.remove("active")
+      );
+
+    btn.classList.add("active");
+
+    const rows =
+      document.querySelectorAll("#queueBody tr");
+
+    rows.forEach(row => {
+
+      if (dept === "all") {
+
+        row.style.display = "";
+
+        return;
+      }
+
+      if (
+        row.innerText
+          .toLowerCase()
+          .includes(dept.toLowerCase())
+      ) {
+
+        row.style.display = "";
+
+      } else {
+
+        row.style.display = "none";
+      }
+    });
+  }
+
+  // ==========================================
+  // REFRESH QUEUE
+  // ==========================================
+  async function refreshQueue() {
+
+    const icon =
+      document.getElementById("refreshIcon");
+
+    if (icon) {
+
+      icon.style.animation =
+        "spin 0.6s linear";
+    }
+
+    await loadQueue();
+
+    setTimeout(() => {
+
+      if (icon) {
+
+        icon.style.animation = "";
+      }
+
+    }, 600);
+  }
+
+  // ==========================================
+  // AUTO REFRESH
+  // ==========================================
+  setInterval(refreshQueue, 3000);
+
+  // ==========================================
+  // INITIAL LOAD
+  // ==========================================
+  document.addEventListener(
+    "DOMContentLoaded",
+    async () => {
+
+      await loadQueue();
+    }
+  );
+
 </script>
-
 </body>
 </html>
