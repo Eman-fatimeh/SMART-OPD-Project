@@ -5,6 +5,7 @@ from datetime import datetime
 
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import declarative_base, sessionmaker
+import re
 
 # =========================
 # DATABASE
@@ -111,12 +112,11 @@ class Doctor(BaseModel):
 
 
 # =========================
-# LOGIN (FIXED)
+# LOGIN
 # =========================
 @app.post("/login")
 def login(data: LoginData):
 
-    # HARD-CODED USERS
     users = {
         "admin": {
             "password": "12345@",
@@ -128,31 +128,14 @@ def login(data: LoginData):
             "role": "receptionist",
             "redirect": "register.html"
         },
-
-        # DOCTORS (YOUR 4 DOCTORS)
-        "shanzaymalik": {
-            "password": "12345@",
-            "role": "doctor",
-            "redirect": "doctor.html"
-        },
-        "alikhan": {
-            "password": "12345@",
-            "role": "doctor",
-            "redirect": "doctor.html"
-        },
-        "faristaheer": {
-            "password": "12345@",
-            "role": "doctor",
-            "redirect": "doctor.html"
-        },
-        "imranhameed": {
-            "password": "12345@",
-            "role": "doctor",
-            "redirect": "doctor.html"
-        }
+        "shanzaymalik": {"password": "12345@", "role": "doctor", "redirect": "doctor.html"},
+        "fatimakhan": {"password": "12345@", "role": "doctor", "redirect": "doctor.html"},
+        "faristaheer": {"password": "12345@", "role": "doctor", "redirect": "doctor.html"},
+        "imranhameed": {"password": "12345@", "role": "doctor", "redirect": "doctor.html"},
     }
 
-    user = users.get(data.username.lower().replace(" ", ""))
+    key = data.username.lower().replace(" ", "")
+    user = users.get(key)
 
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -166,6 +149,7 @@ def login(data: LoginData):
         "username": data.username,
         "redirect": user["redirect"]
     }
+
 
 # =========================
 # PATIENTS
@@ -204,13 +188,9 @@ def get_patients():
     return [
         {
             "id": p.patient_id,
-
-            # IMPORTANT
             "firstName": p.first_name,
             "lastName": p.last_name,
-
             "name": f"{p.first_name} {p.last_name}",
-
             "age": p.age,
             "gender": p.gender,
             "department": p.department,
@@ -218,6 +198,8 @@ def get_patients():
         }
         for p in patients
     ]
+
+
 # =========================
 # DOCTORS
 # =========================
@@ -236,18 +218,16 @@ def add_doctor(data: Doctor):
 
     db.add(doctor)
 
-    # AUTO CREATE LOGIN USER
-    username = data.name.lower().replace(" ", "")
+    username = re.sub(r'[^a-z0-9]', '', data.name.lower())
 
     existing_user = db.query(UserDB).filter_by(username=username).first()
 
     if not existing_user:
-        new_user = UserDB(
+        db.add(UserDB(
             username=username,
             password="1234",
             role="doctor"
-        )
-        db.add(new_user)
+        ))
 
     db.commit()
     db.close()
@@ -307,10 +287,21 @@ def generate_token(patient_id: str):
     patient = db.query(PatientDB).filter_by(patient_id=patient_id).first()
 
     if not patient:
-        raise HTTPException(404, "Patient not found")
+        db.close()
+        raise HTTPException(status_code=404, detail="Patient not found")
 
-    count = db.query(TokenDB).count()
-    token_number = f"T-{str(count + 1).zfill(3)}"
+    last_token = db.query(TokenDB).order_by(TokenDB.id.desc()).first()
+
+    if last_token and last_token.token_number:
+        try:
+            last_num = int(last_token.token_number.split("-")[1])
+        except:
+            last_num = 0
+        new_num = last_num + 1
+    else:
+        new_num = 1
+
+    token_number = f"T-{str(new_num).zfill(3)}"
 
     token = TokenDB(
         token_number=token_number,
@@ -326,7 +317,11 @@ def generate_token(patient_id: str):
     db.commit()
     db.close()
 
-    return {"success": True, "token": token_number}
+    return {
+        "success": True,
+        "token": token_number,
+        "patient_id": patient.patient_id
+    }
 
 
 @app.get("/tokens")
@@ -334,15 +329,18 @@ def get_tokens():
 
     db = SessionLocal()
     tokens = db.query(TokenDB).all()
-    db.close()
 
-    return [
+    result = [
         {
             "token": t.token_number,
             "patient": t.patient_name,
             "department": t.department,
+            "doctor": t.doctor_name,
             "status": t.status,
             "time": t.time
         }
         for t in tokens
     ]
+
+    db.close()
+    return result

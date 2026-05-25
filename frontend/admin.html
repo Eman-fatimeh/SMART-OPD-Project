@@ -414,6 +414,11 @@ th{
 <script>
 
 /* =========================
+   AUTH CHECK
+========================= */
+
+
+/* =========================
    LIVE CLOCK
 ========================= */
 
@@ -434,9 +439,11 @@ updateTime();
 
 function logout(){
 
-  localStorage.clear();
+  localStorage.removeItem("loggedIn");
+  localStorage.removeItem("role");
 
-  window.location.href = "login.html";
+  window.location.href =
+    "login.html";
 }
 
 

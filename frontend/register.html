@@ -1199,7 +1199,7 @@
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
                   Back
                 </button>
-                <button class="btn-submit" onclick="submitForm()">
+                <button type="button" class="btn-submit" id="registerBtn">
                   <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
                   Register Patient
                 </button>
@@ -1387,7 +1387,7 @@
     try {
       const res = await fetch("http://127.0.0.1:8000/patients");
       const data = await res.json();
-
+      
       const tbody = document.querySelector("tbody");
       tbody.innerHTML = "";
 
@@ -1497,86 +1497,110 @@
   // =========================
   async function submitForm() {
 
-    const dept = document.getElementById('department');
-    const comp = document.getElementById('complaint');
+  console.log("submitForm started");
 
-    let valid = true;
+  const dept = document.getElementById('department');
+  const comp = document.getElementById('complaint');
 
-    if (!dept.value) { showErr('deptErr', dept); valid = false; }
-    else hideErr('deptErr', dept);
+  let valid = true;
 
-    if (!comp.value.trim()) { showErr('complaintErr', comp); valid = false; }
-    else hideErr('complaintErr', comp);
-
-    if (!valid) return;
-
-    const gender = document.querySelector('input[name="gender"]:checked')?.value;
-
-    const payload = {
-      firstName: document.getElementById('firstName').value,
-      lastName: document.getElementById('lastName').value,
-      age: parseInt(document.getElementById('age').value),
-      dob: document.getElementById('dob').value,
-      blood: document.getElementById('blood').value,
-      gender: gender,
-
-      phone: document.getElementById('phone').value,
-      email: document.getElementById('email').value,
-      address: document.getElementById('address').value,
-      emergencyName: document.getElementById('emergencyName').value,
-      emergencyPhone: document.getElementById('emergencyPhone').value,
-
-      department: dept.value,
-      visitType: document.getElementById('visitType').value,
-      complaint: comp.value,
-      allergies: document.getElementById('allergies').value
-    };
-
-    try {
-      const res = await fetch("http://127.0.0.1:8000/register-patient", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload)
-      });
-
-      const data = await res.json();
-
-      if (data.success) {
-
-        // =========================
-        // NEW FIX: SYNC WITH QUEUE PAGE
-        // =========================
-
-        let queueData = JSON.parse(localStorage.getItem("queueData")) || [];
-
-        const newPatient = {
-          token: data.patientId,   // SAME TOKEN
-          name: `${payload.firstName} ${payload.lastName}`,
-          dept: payload.department
-        };
-
-        queueData.push(newPatient);
-
-        localStorage.setItem("queueData", JSON.stringify(queueData));
-
-        // show ID
-        document.getElementById('generatedId').textContent = data.patientId;
-
-        document.getElementById('successModal').classList.add('show');
-
-        loadPatients();
-
-      } else {
-        alert(data.detail || "Registration failed");
-      }
-
-    } catch (err) {
-      console.error(err);
-      alert("Server not reachable (check FastAPI is running on port 8000)");
-    }
+  if (!dept.value) {
+    showErr('deptErr', dept);
+    valid = false;
+  } else {
+    hideErr('deptErr', dept);
   }
 
+  if (!comp.value.trim()) {
+    showErr('complaintErr', comp);
+    valid = false;
+  } else {
+    hideErr('complaintErr', comp);
+  }
 
+  if (!valid) {
+    console.log("Validation failed");
+    return;
+  }
+
+  const gender =
+    document.querySelector('input[name="gender"]:checked')?.value;
+
+  const payload = {
+    firstName: document.getElementById('firstName').value,
+    lastName: document.getElementById('lastName').value,
+    age: parseInt(document.getElementById('age').value),
+    dob: document.getElementById('dob').value,
+    blood: document.getElementById('blood').value,
+    gender: gender,
+
+    phone: document.getElementById('phone').value,
+    email: document.getElementById('email').value,
+    address: document.getElementById('address').value,
+    emergencyName: document.getElementById('emergencyName').value,
+    emergencyPhone: document.getElementById('emergencyPhone').value,
+
+    department: dept.value,
+    visitType: document.getElementById('visitType').value,
+    complaint: comp.value,
+    allergies: document.getElementById('allergies').value
+  };
+
+  console.log("Sending payload:", payload);
+
+  try {
+
+    const res = await fetch(
+      "http://127.0.0.1:8000/register-patient",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      }
+    );
+
+    console.log("Response status:", res.status);
+
+    const data = await res.json();
+
+    console.log("API response:", data);
+
+    if (data.success) {
+
+      let queueData =
+        JSON.parse(localStorage.getItem("queueData")) || [];
+
+      const newPatient = {
+        token: data.patientId,
+        name: `${payload.firstName} ${payload.lastName}`,
+        dept: payload.department
+      };
+
+      queueData.push(newPatient);
+
+      localStorage.setItem(
+        "queueData",
+        JSON.stringify(queueData)
+      );
+
+      console.log("Saved queueData:", queueData);
+
+      alert("Patient Registered Successfully");
+
+    } else {
+
+      console.log("API returned failure");
+
+    }
+
+  } catch(err) {
+
+    console.error("FETCH ERROR:", err);
+
+  }
+}
   // =========================
   // CLOSE MODAL
   // =========================
@@ -1594,7 +1618,9 @@
 
     document.getElementById('gMale').classList.add('selected');
   }
-
+document
+  .getElementById("registerBtn")
+  .addEventListener("click", submitForm);
 </script>
 
 </body>

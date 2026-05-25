@@ -564,7 +564,7 @@
   <a href="token.html" class="nav-item active">
     <svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" stroke="currentColor" stroke-width="2"/></svg>
     Token Generation
-    <span class="nav-badge" id="queueCount">12</span>
+    <span class="nav-badge" id="queueCount">0</span>
   </a>
 
   <a href="queue.html" class="nav-item">
@@ -572,7 +572,6 @@
     Queue Display
   </a>
 
-  
   <div class="sidebar-footer">
     <a href="login.html" class="logout-btn">
       <svg width="15" height="15" fill="none" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
@@ -598,19 +597,19 @@
     <div class="stats-row">
       <div class="stat-card">
         <div class="stat-icon blue">🎫</div>
-        <div class="stat-info"><p id="totalTokens">12</p><span>Tokens Issued Today</span></div>
+        <div class="stat-info"><p id="totalTokens">0</p><span>Tokens Issued Today</span></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon amber">⏳</div>
-        <div class="stat-info"><p>6</p><span>Currently Waiting</span></div>
+        <div class="stat-info"><p id="waitingCount">0</p><span>Currently Waiting</span></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon green">✅</div>
-        <div class="stat-info"><p>5</p><span>Consultations Done</span></div>
+        <div class="stat-info"><p id="doneCount">0</p><span>Consultations Done</span></div>
       </div>
       <div class="stat-card">
         <div class="stat-icon blue">🔢</div>
-        <div class="stat-info"><p id="nextTokenStat">T-013</p><span>Next Token</span></div>
+        <div class="stat-info"><p id="nextTokenStat">T-001</p><span>Next Token</span></div>
       </div>
     </div>
 
@@ -639,62 +638,34 @@
 
             <!-- Search Results -->
             <div class="patient-results" id="patientResults">
-              <div class="patient-result-item" onclick="selectPatient('P-1024','Ahmed Hassan',42,'Male','Cardiology')">
-                <div class="pat-avatar">AH</div>
-                <div class="pat-info">
-                  <div class="pat-name">Ahmed Hassan</div>
-                  <div class="pat-meta">42 yrs · Male · Cardiology</div>
-                </div>
-                <span class="pat-id">P-1024</span>
-              </div>
-              <div class="patient-result-item" onclick="selectPatient('P-1023','Sara Iqbal',29,'Female','General OPD')">
-                <div class="pat-avatar green">SI</div>
-                <div class="pat-info">
-                  <div class="pat-name">Sara Iqbal</div>
-                  <div class="pat-meta">29 yrs · Female · General OPD</div>
-                </div>
-                <span class="pat-id">P-1023</span>
-              </div>
-              <div class="patient-result-item" onclick="selectPatient('P-1022','Bilal Raza',55,'Male','Orthopedics')">
-                <div class="pat-avatar amber">BR</div>
-                <div class="pat-info">
-                  <div class="pat-name">Bilal Raza</div>
-                  <div class="pat-meta">55 yrs · Male · Orthopedics</div>
-                </div>
-                <span class="pat-id">P-1022</span>
-              </div>
-              <div class="patient-result-item">
-                <div class="pat-avatar" style="background:#8b5cf6;">FK</div>
-                <div class="pat-info">
-                  <div class="pat-name">Fatima Khan</div>
-                  <div class="pat-meta">33 yrs · Female · Gynecology</div>
-                </div>
-                <span class="already-badge">Token Issued</span>
+              <div class="empty-state">
+                <div>🔍</div>
+                Loading patients...
               </div>
             </div>
 
             <!-- Selected Patient -->
             <div class="selected-patient" id="selectedPatient">
               <div class="sp-header">
-                <div class="sp-avatar" id="spAvatar">AH</div>
+                <div class="sp-avatar" id="spAvatar">--</div>
                 <div>
-                  <div class="sp-name" id="spName">Ahmed Hassan</div>
-                  <div class="sp-sub" id="spSub">P-1024 · Cardiology</div>
+                  <div class="sp-name" id="spName">--</div>
+                  <div class="sp-sub" id="spSub">--</div>
                 </div>
                 <button class="sp-clear" onclick="clearPatient()">×</button>
               </div>
               <div class="sp-details">
                 <div class="sp-detail">
                   <div class="sp-detail-label">Age</div>
-                  <div class="sp-detail-val" id="spAge">42 yrs</div>
+                  <div class="sp-detail-val" id="spAge">--</div>
                 </div>
                 <div class="sp-detail">
                   <div class="sp-detail-label">Gender</div>
-                  <div class="sp-detail-val" id="spGender">Male</div>
+                  <div class="sp-detail-val" id="spGender">--</div>
                 </div>
                 <div class="sp-detail">
                   <div class="sp-detail-label">Department</div>
-                  <div class="sp-detail-val" id="spDept">Cardiology</div>
+                  <div class="sp-detail-val" id="spDept">--</div>
                 </div>
               </div>
             </div>
@@ -702,24 +673,25 @@
             <!-- Token Display -->
             <div class="token-display" id="tokenDisplay">
               <div class="token-label">Queue Token</div>
-              <div class="token-number" id="tokenNum">013</div>
-              <div class="token-prefix" id="tokenFull">T-013</div>
+              <!-- FIX (Bug 1): tokenNum shows only the numeric part e.g. "013", tokenFull shows "T-013" -->
+              <div class="token-number" id="tokenNum">001</div>
+              <div class="token-prefix" id="tokenFull">T-001</div>
               <hr class="token-divider">
               <div class="token-meta">
                 <div class="token-meta-item">
                   <div class="token-meta-label">Patient</div>
-                  <div class="token-meta-val" id="tokenPatient">Ahmed H.</div>
+                  <div class="token-meta-val" id="tokenPatient">--</div>
                 </div>
                 <div class="token-meta-item">
                   <div class="token-meta-label">Department</div>
-                  <div class="token-meta-val" id="tokenDept">Cardiology</div>
+                  <div class="token-meta-val" id="tokenDept">--</div>
                 </div>
                 <div class="token-meta-item">
                   <div class="token-meta-label">Position</div>
-                  <div class="token-meta-val" id="tokenPos">#3 in line</div>
+                  <div class="token-meta-val" id="tokenPos">--</div>
                 </div>
               </div>
-              <div class="wait-badge" id="waitBadge">⏱ Est. wait: ~15 mins</div>
+              <div class="wait-badge" id="waitBadge">⏱ Added to queue</div>
             </div>
 
             <!-- Buttons -->
@@ -736,6 +708,10 @@
           </div>
         </div>
       </div>
+
+    </div><!-- end page-grid -->
+  </div><!-- end content -->
+</div><!-- end main -->
 
 <script>
 
@@ -773,18 +749,17 @@ async function loadPatients() {
     allPatients = data.map(p => {
 
       const first = p.firstName || "";
-      const last = p.lastName || "";
-
-      const name = `${first} ${last}`.trim();
+      const last  = p.lastName  || "";
+      const name  = `${first} ${last}`.trim();
 
       return {
-        id: p.id,
-        name: name,
+        id:       p.id,
+        name:     name,
         firstName: first,
-        lastName: last,
-        age: p.age,
-        gender: p.gender,
-        dept: p.department,
+        lastName:  last,
+        age:      p.age,
+        gender:   p.gender,
+        dept:     p.department,
         initials: ((first[0] || "") + (last[0] || "")).toUpperCase()
       };
     });
@@ -793,6 +768,11 @@ async function loadPatients() {
 
   } catch (err) {
     console.error("Error loading patients:", err);
+    document.getElementById("patientResults").innerHTML = `
+      <div class="empty-state">
+        <div>⚠️</div>
+        Could not connect to server
+      </div>`;
   }
 }
 
@@ -810,7 +790,7 @@ function searchPatients(query) {
 
   const filtered = allPatients.filter(p =>
     p.name.toLowerCase().includes(q) ||
-    p.id.toLowerCase().includes(q) ||
+    p.id.toLowerCase().includes(q)   ||
     p.dept.toLowerCase().includes(q)
   );
 
@@ -829,26 +809,18 @@ function renderResults(patients) {
       <div class="empty-state">
         <div>🔍</div>
         No patients found
-      </div>
-    `;
+      </div>`;
     return;
   }
 
   results.innerHTML = patients.map(p => `
-    <div class="patient-result-item"
-         onclick="selectPatient('${p.id}')">
-
+    <div class="patient-result-item" onclick="selectPatient('${p.id}')">
       <div class="pat-avatar">${p.initials}</div>
-
       <div class="pat-info">
         <div class="pat-name">${p.name}</div>
-        <div class="pat-meta">
-          ${p.age} yrs · ${p.gender} · ${p.dept}
-        </div>
+        <div class="pat-meta">${p.age} yrs · ${p.gender} · ${p.dept}</div>
       </div>
-
       <span class="pat-id">${p.id}</span>
-
     </div>
   `).join("");
 }
@@ -863,18 +835,16 @@ function selectPatient(id) {
 
   selectedPatientData = patient;
 
-  document.getElementById("spAvatar").textContent = patient.initials;
-  document.getElementById("spName").textContent = patient.name;
-  document.getElementById("spSub").textContent = `${patient.id} · ${patient.dept}`;
-  document.getElementById("spAge").textContent = `${patient.age} yrs`;
-  document.getElementById("spGender").textContent = patient.gender;
-  document.getElementById("spDept").textContent = patient.dept;
+  document.getElementById("spAvatar").textContent  = patient.initials;
+  document.getElementById("spName").textContent    = patient.name;
+  document.getElementById("spSub").textContent     = `${patient.id} · ${patient.dept}`;
+  document.getElementById("spAge").textContent     = `${patient.age} yrs`;
+  document.getElementById("spGender").textContent  = patient.gender;
+  document.getElementById("spDept").textContent    = patient.dept;
 
   document.getElementById("selectedPatient").classList.add("show");
-
-  document.getElementById("generateBtn").disabled = false;
-  document.getElementById("printBtn").disabled = true;
-
+  document.getElementById("generateBtn").disabled  = false;
+  document.getElementById("printBtn").disabled     = true;
   document.getElementById("tokenDisplay").style.display = "none";
 }
 
@@ -884,6 +854,10 @@ function selectPatient(id) {
 async function generateToken() {
 
   if (!selectedPatientData) return;
+
+  const btn = document.getElementById("generateBtn");
+  btn.disabled = true;
+  btn.textContent = "Generating…";
 
   try {
 
@@ -896,45 +870,51 @@ async function generateToken() {
 
     if (!data.success) {
       alert("Failed to generate token");
+      btn.disabled = false;
+      btn.innerHTML = `<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" stroke="white" stroke-width="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" stroke="white" stroke-width="2"/></svg> Generate Token`;
       return;
     }
 
-    const token = data.token;
+    const token = data.token; // e.g. "T-013"
 
-    document.getElementById("tokenNum").textContent = token;
-    document.getElementById("tokenFull").textContent = token;
+    // FIX (Bug 1): Show only the numeric part in the big display, full token as label
+    const tokenParts = token.split("-");
+    const tokenNumOnly = tokenParts.length > 1 ? tokenParts[1] : token; // "013"
+
+    document.getElementById("tokenNum").textContent     = tokenNumOnly;  // "013"
+    document.getElementById("tokenFull").textContent    = token;          // "T-013"
     document.getElementById("tokenPatient").textContent = selectedPatientData.name;
-    document.getElementById("tokenDept").textContent = selectedPatientData.dept;
-
-    document.getElementById("tokenPos").textContent = "Added to queue";
-    document.getElementById("waitBadge").textContent = "⏱ Updated by server";
+    document.getElementById("tokenDept").textContent    = selectedPatientData.dept;
+    document.getElementById("tokenPos").textContent     = "Added to queue";
+    document.getElementById("waitBadge").textContent    = "⏱ Updated by server";
 
     document.getElementById("tokenDisplay").style.display = "block";
-
-    document.getElementById("generateBtn").disabled = true;
     document.getElementById("printBtn").disabled = false;
 
     tokenGenerated = true;
 
-    // refresh queue view (if you have it)
+    // Refresh stats from /tokens
     loadTokens();
 
   } catch (err) {
     console.error("Token error:", err);
+    alert("Could not connect to server");
+    btn.disabled = false;
+    btn.innerHTML = `<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" stroke="white" stroke-width="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" stroke="white" stroke-width="2"/></svg> Generate Token`;
   }
 }
 
 // =========================
-// LOAD TOKENS (QUEUE)
+// LOAD TOKENS — stats only
+// FIX (Bug 4): removed renderQueue() call — #queueBody does not exist in this page.
+//              This function now only updates the stat counters.
 // =========================
 async function loadTokens() {
 
   try {
 
-    const res = await fetch(`${API_URL}/tokens`);
+    const res    = await fetch(`${API_URL}/tokens`);
     const tokens = await res.json();
-
-    renderQueue(tokens);
 
     updateStats(tokens);
 
@@ -944,51 +924,21 @@ async function loadTokens() {
 }
 
 // =========================
-// RENDER QUEUE
-// =========================
-function renderQueue(tokens) {
-
-  const body = document.getElementById("queueBody");
-
-  if (!tokens.length) {
-    body.innerHTML = `
-      <tr>
-        <td colspan="4">No active queue</td>
-      </tr>
-    `;
-    return;
-  }
-
-  body.innerHTML = tokens.map(t => `
-    <tr>
-
-      <td>
-        <span class="token-badge">${t.token}</span>
-      </td>
-
-      <td>${t.patient}</td>
-
-      <td>${t.department}</td>
-
-      <td>
-        <span class="status-pill">${t.status}</span>
-      </td>
-
-    </tr>
-  `).join("");
-}
-
-// =========================
 // UPDATE STATS
 // =========================
 function updateStats(tokens = []) {
 
-  document.getElementById("totalTokens").textContent = tokens.length;
+  const total   = tokens.length;
+  const waiting = tokens.filter(t => t.status === "Waiting").length;
+  const done    = tokens.filter(t => t.status === "Done" || t.status === "Completed").length;
 
-  document.getElementById("queueCount").textContent = tokens.length;
+  document.getElementById("totalTokens").textContent  = total;
+  document.getElementById("waitingCount").textContent = waiting;
+  document.getElementById("doneCount").textContent    = done;
+  document.getElementById("queueCount").textContent   = total;
 
   document.getElementById("nextTokenStat").textContent =
-    `T-${String(tokens.length + 1).padStart(3, "0")}`;
+    `T-${String(total + 1).padStart(3, "0")}`;
 }
 
 // =========================
@@ -997,12 +947,12 @@ function updateStats(tokens = []) {
 function clearPatient() {
 
   selectedPatientData = null;
+  tokenGenerated = false;
 
   document.getElementById("selectedPatient").classList.remove("show");
-
   document.getElementById("generateBtn").disabled = true;
+  document.getElementById("generateBtn").innerHTML = `<svg width="16" height="16" fill="none" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" stroke="white" stroke-width="2"/><path d="M16 7V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v2" stroke="white" stroke-width="2"/></svg> Generate Token`;
   document.getElementById("printBtn").disabled = true;
-
   document.getElementById("tokenDisplay").style.display = "none";
 }
 

@@ -722,6 +722,21 @@
         token: data.token || null
       };
 
+      localStorage.setItem(
+  "loggedInUser",
+  JSON.stringify(userData)
+);
+
+/* IMPORTANT */
+localStorage.setItem(
+  "loggedIn",
+  "true"
+);
+
+localStorage.setItem(
+  "role",
+  role
+);
       localStorage.setItem("loggedInUser", JSON.stringify(userData));
 
       if (role === "doctor") {
