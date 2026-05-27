@@ -48,7 +48,7 @@ CareFlow-OPD/
 ├── backend/
 │   ├── main.py
 │   ├── patients.db
-|   |__test_main.py
+|   |__requirements.txt
 │   ├── models (SQLAlchemy tables)
 │
 ├── frontend/
